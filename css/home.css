@@ -1,0 +1,53 @@
+/* 배경색 설정 */
+.link-page {
+    background-color: #17191a; /* 이미지와 비슷한 어두운 청록색 */
+    color: white;
+    font-family: Arial, sans-serif;
+    padding: 50px;
+}
+
+/* 두 섹션을 가로로 배치 */
+.container {
+    display: grid; /* flex를 grid로 변경 */
+    
+    /* 1. 열(Column) 설정: 4개를 동일한 비율(1fr)로 만듭니다. */
+    grid-template-columns: repeat(4, 1fr); 
+    
+    /* 2. 간격 설정: 줄 사이와 열 사이의 간격을 일정하게 줍니다. */
+    gap: 40px 20px; /* (세로간격) (가로간격) */
+    
+    max-width: 1200px; /* 4열이므로 너비를 조금 더 넓히는 것이 좋습니다. */
+    margin: 0 auto;
+    padding: 20px;
+}
+/* 제목 색상 */
+.title-yellow { color: #ffff00; }
+.title-pink { color: #ff00ff; }
+
+/* 리스트 스타일 제거 */
+ul {
+    list-style: square; /* 이미지처럼 사각형 점 */
+    padding-left: 20px;
+}
+
+li {
+    margin-bottom: 10px;
+}
+
+/* 링크 스타일링 */
+a {
+    color: white;
+    text-decoration: underline; /* 밑줄 추가 */
+    font-weight: bold;
+}
+
+/* 구글 섹션처럼 4 줄로 나누고 싶을 때 */
+.four-column {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr); /* 0.25:0.25 비율로 네 칸 나눔 */
+    gap: 10px;
+}
+
+#target-link {
+    color: rgb(40, 233, 104);
+}

@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>프리미엄 다크 데이터 대시보드</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <style>
+        /* 2. 세련된 다크 & 블루 테마 디자인 (CSS) */
+        :root {
+            --bg-color: #0f172a;       /* 매우 깊은 네이비/블랙 바디 배경 */
+            --card-bg: #1e293b;        /* 카드 내부 어두운 회색 배경 */
+            --text-main: #f8fafc;      /* 메인 화이트 글자 색상 */
+            --text-muted: #94a3b8;     /* 흐린 회색 글자 색상 */
+            --accent-blue: #38bdf8;    /* 사이언/블루 강조색 */
+            --accent-hover: #0284c7;   /* 버튼 호버 시 짙은 블루 */
+            --border-color: #334155;   /* 어두운 테두리 선 */
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 40px 20px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .dashboard {
+            width: 100%;
+            max-width: 1200px;
+            display: grid;
+            grid-template-columns: 1fr 2fr; /* 왼쪽 입력창(1), 오른쪽 그래프(2) 비율 */
+            gap: 30px;
+        }
+
+        /* 화면이 좁아지면 위아래로 한 줄씩 배치 (반응형 웹) */
+        @media (max-width: 900px) {
+            .dashboard { grid-template-columns: 1fr; }
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            padding: 30px;
+            border: 1px solid var(--border-color);
+        }
+
+        h2 {
+            margin-top: 0;
+            font-size: 1.3rem;
+            color: var(--text-main);
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+        }
+
+        /* 11개 입력창을 깔끔하게 정렬하기 위한 그리드 */
+        .input-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr); /* 2열로 배치 */
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .input-group label {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        .input-group input {
+            background-color: #0f172a;
+            color: #ffffff;
+            border: 1px solid var(--border-color);
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 1rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .input-group input:focus {
+            border-color: var(--accent-blue); /* 포커스 시 블루 하이라이트 */
+        }
+
+        /* 블루 테마 버튼 스타일 */
+        .btn-submit {
+            width: 100%;
+            background: linear-gradient(135deg, #1d4ed8, #1e40af);
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px 20px rgba(29, 78, 216, 0.4);
+            transition: background 0.2s;
+        }
+
+        .btn-submit:hover {
+            background: linear-gradient(135deg, #1e40af, #1d4ed8);
+        }
+
+	/* 그래프가 그려질 캔버스 컨테이너 (수정본) */
+		.chart-container {
+   		 position: relative;
+   		 width: 100%;
+    		/* height: 100%;  <- 기존의 이 부분을 지우고 아래처럼 고정 높이를 줍니다. */
+    		height: 450px;     /* 화면에 딱 보기 좋은 절대적인 높이 고정 (원하는 크기로 조절 가능) */
+	}    
+	</style>
+</head>
+<body>
+
+    <div class="dashboard">
+        
+        <div class="card">
+            <h2>📊 데이터 입력 (11개 항목)</h2>
+            <form id="data-form">
+                <div class="input-grid" id="input-fields-container">
+                    </div>
+                <button type="button" class="btn-submit" onclick="saveAndRender()">데이터 저장 및 그래프 반영</button>
+            </form>
+        </div>
+
+        <div class="card">
+            <h2>📈 데이터 시각화 그래프</h2>
+            <div class="chart-container">
+                <canvas id="myChart"></canvas>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        let myChart = null; // 생성된 차트 객체를 담을 변수
+        const totalInputs = 11; // 입력받을 데이터 개수 설정
+
+        // 1. 페이지가 처음 켜질 때 실행되는 초기화 코드
+        window.onload = function() {
+            createInputFields(); // 11개 입력 필드 화면에 그리기
+            loadData();          // 로컬 스토리지에서 기억된 데이터 불러오기
+        };
+
+        // 2. HTML에 11개의 입력창을 자동으로 만들어주는 함수
+        function createInputFields() {
+            const container = document.getElementById('input-fields-container');
+            let html = '';
+            for (let i = 1; i <= totalInputs; i++) {
+                html += `
+                    <div class="input-group">
+                        <label for="val-${i}">항목 ${i}</label>
+                        <input type="number" id="val-${i}" value="0">
+                    </div>
+                `;
+            }
+            container.innerHTML = html;
+        }
+
+        // 3. 브라우저 저장소(LocalStorage)에서 데이터를 꺼내와 화면에 채우고 그래프를 그리는 함수
+        function loadData() {
+            // 'savedData'라는 키로 저장된 텍스트가 있는지 확인
+            const saved = localStorage.getItem('savedData');
+            let dataArray = [];
+
+            if (saved) {
+                // 저장된 텍스트(JSON)를 다시 자바스크립트 배열로 변환
+                dataArray = JSON.parse(saved);
+                // 가져온 데이터를 각각의 input 창에 채워 넣기
+                for (let i = 1; i <= totalInputs; i++) {
+                    document.getElementById(`val-${i}`).value = dataArray[i - 1] || 0;
+                }
+            } else {
+                // 저장된 게 없다면 기본값 0으로 초기 배열 생성
+                dataArray = Array(totalInputs).fill(0);
+            }
+
+            // 데이터를 가지고 그래프 그리기
+            renderChart(dataArray);
+        }
+
+        // 4. [핵심] 사용자가 버튼을 눌렀을 때 입력값을 저장하고 그래프를 갱신하는 함수
+        function saveAndRender() {
+            const dataArray = [];
+            
+            // 11개 입력창의 숫자를 긁어 모아 배열에 담습니다.
+            for (let i = 1; i <= totalInputs; i++) {
+                const val = parseFloat(document.getElementById(`val-${i}`).value) || 0;
+                dataArray.push(val);
+            }
+
+            // 브라우저 로컬 스토리지에 'savedData'라는 이름으로 배열을 문자열화(JSON)하여 저장!
+            localStorage.setItem('savedData', JSON.stringify(dataArray));
+
+            // 그래프 새로고침
+            renderChart(dataArray);
+            alert("데이터가 브라우저에 성공적으로 저장되고 그래프에 반영되었습니다!");
+        }
+
+        // 5. Chart.js 라이브러리를 사용해 멋진 블루 톤 그래프를 그려주는 함수
+        function renderChart(dataValues) {
+            const ctx = document.getElementById('myChart').getContext('2d');
+            
+            // x축에 들어갈 11개의 라벨 생성 (항목 1 ~ 항목 11)
+            const labels = [];
+            for(let i=1; i<=totalInputs; i++) labels.push(`항목 ${i}`);
+
+            // 기존에 그려진 그래프가 있다면 파괴(초기화)해야 데이터가 꼬이지 않습니다.
+            if (myChart) {
+                myChart.destroy();
+            }
+
+            // 새로운 선형(Line) 그래프 생성
+            myChart = new Chart(ctx, {
+                type: 'line', 
+                data: {
+                    labels: labels, // X축 라벨
+                    datasets: [{
+                        label: '입력된 데이터 값',
+                        data: dataValues, // Y축 실제 데이터 값 배열
+                        borderColor: '#38bdf8', // 세련된 사이언 블루 선
+                        backgroundColor: 'rgba(56, 189, 248, 0.1)', // 선 아래 흐릿한 블루 채우기
+                        borderWidth: 3,
+                        pointBackgroundColor: '#ffffff', // 꺾임점 흰색 점
+                        pointBorderColor: '#1d4ed8',
+                        pointRadius: 5,
+                        pointHoverRadius: 7,
+                        tension: 0.3 // 곡선 부드러움 정도 (0이면 완전히 꺾인 선)
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            labels: { color: '#f8fafc' } // 범례 글자 색상 (화이트)
+                        }
+                    },
+                    scales: {
+                        // X축 디자인 설정
+                        x: {
+                            grid: { color: '#334155' },
+                            ticks: { color: '#94a3b8' }
+                        },
+                        // Y축 디자인 설정
+                        y: {
+                            grid: { color: '#334155' },
+                            ticks: { color: '#94a3b8' },
+                            beginAtZero: true // Y축이 무조건 0부터 시작하도록 고정
+                        }
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>
