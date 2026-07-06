@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GEM 프리미엄 MP3 플레이어</title>
+    <style>
+        /* ==========================================
+           🎨 CSS: 모던 다크모드 디자인 & 세련된 그래픽
+           ========================================== */
+        :root {
+            --bg-gradient: linear-gradient(135deg, #1f1c2c, #928dab);
+            --panel-bg: rgba(30, 30, 35, 0.75);
+            --card-bg: rgba(45, 45, 52, 0.9);
+            --text-main: #ffffff;
+            --text-sub: #b3b3b3;
+            --accent-color: #6c5ce7;
+            --accent-hover: #a29bfe;
+            --danger-color: #ff7675;
+            --danger-hover: #ff7675;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: '-apple-system', BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background: var(--bg-gradient);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        /* 메인 컨테이너 (레이아웃) */
+        .player-app {
+            display: flex;
+            background: var(--panel-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 30px;
+            border-radius: 24px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+            width: 700px;
+            max-width: 100%;
+            gap: 25px;
+        }
+
+        /* 1. 왼쪽 메인 제어부 */
+        .player-main {
+            flex: 1.2;
+            background: var(--card-bg);
+            border-radius: 20px;
+            padding: 30px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* 가상의 앨범 아트 그래픽 */
+        .album-art {
+            width: 140px;
+            height: 140px;
+            background: linear-gradient(45deg, #6c5ce7, #fd79a8);
+            border-radius: 50%;
+            margin-bottom: 25px;
+            box-shadow: 0 10px 25px rgba(108, 92, 231, 0.4);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 3.5rem;
+            animation: rotateArt 20s linear infinite;
+            animation-play-state: paused; /* 기본은 정지 상태 */
+        }
+
+        @keyframes rotateArt {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .song-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+            margin-bottom: 6px;
+            width: 100%;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .artist-name {
+            font-size: 0.9rem;
+            color: var(--text-sub);
+            margin-bottom: 25px;
+        }
+
+        /* 오디오 컨트롤 버튼 셋 */
+        .controls {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 25px;
+        }
+
+        .btn-ctrl {
+            background: none;
+            border: none;
+            color: var(--text-sub);
+            font-size: 1.5rem;
+            cursor: pointer;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: all 0.2s ease;
+        }
+
+        .btn-ctrl:hover {
+            color: var(--text-main);
+            background-color: rgba(255, 255, 255, 0.08);
+        }
+
+        /* 재생 버튼 강조 */
+        .btn-play-pause {
+            background-color: var(--accent-color);
+            color: #fff;
+            font-size: 1.3rem;
+            width: 56px;
+            height: 56px;
+            box-shadow: 0 4px 15px rgba(108, 92, 231, 0.4);
+        }
+
+        .btn-play-pause:hover {
+            background-color: var(--accent-hover);
+            color: #fff;
+            transform: scale(1.05);
+        }
+
+        /* 5초 구간 반복 버튼 */
+        .btn-loop {
+            background-color: transparent;
+            border: 2px solid rgba(255, 255, 255, 0.15);
+            color: var(--text-sub);
+            padding: 10px 20px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+
+        .btn-loop:hover {
+            border-color: rgba(255, 255, 255, 0.4);
+            color: var(--text-main);
+        }
+
+        .btn-loop.active {
+            background-color: var(--danger-color);
+            border-color: var(--danger-color);
+            color: #fff;
+            box-shadow: 0 4px 12px rgba(255, 118, 117, 0.3);
+        }
+
+
+        /* 2. 오른쪽 플레이리스트 및 업로드부 */
+        .player-playlist {
+            flex: 0.9;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* 음악 추가 버튼 스타일 */
+        .upload-label {
+            background-color: rgba(255, 255, 255, 0.05);
+            border: 2px dashed rgba(255, 255, 255, 0.2);
+            color: var(--text-sub);
+            padding: 15px;
+            border-radius: 14px;
+            text-align: center;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+            transition: all 0.2s ease;
+            display: block;
+        }
+
+        .upload-label:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            border-color: var(--accent-hover);
+            color: var(--text-main);
+        }
+
+        #file-input {
+            display: none;
+        }
+
+        .playlist-header {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-sub);
+            margin-bottom: 12px;
+            padding-left: 5px;
+        }
+
+        /* 스크롤 가능한 곡 목록 */
+        .track-list {
+            list-style: none;
+            overflow-y: auto;
+            flex-grow: 1;
+            max-height: 260px;
+            padding-right: 5px;
+        }
+
+        /* 스크롤바 세련되게 디자인 */
+        .track-list::-webkit-scrollbar {
+            width: 6px;
+        }
+        .track-list::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+        }
+
+        .track-list li {
+            padding: 12px 16px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            color: var(--text-sub);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-bottom: 6px;
+            transition: all 0.2s ease;
+            background-color: rgba(255, 255, 255, 0.02);
+        }
+
+        .track-list li:hover {
+            background-color: rgba(255, 255, 255, 0.07);
+            color: var(--text-main);
+        }
+
+        /* 현재 재생중인 곡의 하이라이트 스타일 */
+        .track-list li.playing {
+            background-color: rgba(108, 92, 231, 0.15);
+            color: var(--accent-hover);
+            font-weight: 600;
+            border-left: 4px solid var(--accent-color);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="player-app">
+        <div class="player-main">
+            <div class="album-art" id="album-art">🎵</div>
+            
+            <div class="song-title" id="music-title">음악을 추가해 주세요</div>
+            <div class="artist-name">GEM PREMIUM PLAYER</div>
+            
+            <audio id="my-audio"></audio>
+
+            <div class="controls">
+                <button class="btn-ctrl" onclick="prevTrack()" title="이전곡">⏮</button>
+                <button class="btn-ctrl btn-play-pause" onclick="togglePlay()" id="play-btn" title="재생">▶</button>
+                <button class="btn-ctrl" onclick="stopTrack()" title="멈춤">⏹</button>
+                <button class="btn-ctrl" onclick="nextTrack()" title="다음곡">⏭</button>
+            </div>
+
+            <button class="btn-loop" onclick="toggleLoop5Sec()" id="loop-btn">5초 구간 반복: OFF</button>
+        </div>
+
+        <div class="player-playlist">
+            <label for="file-input" class="upload-label">
+                ➕ 내 컴퓨터에서 MP3 추가
+            </label>
+            <input type="file" id="file-input" accept="audio/mpeg" multiple>
+            
+            <div class="playlist-header">재생 목록</div>
+            <ul class="track-list" id="playlist-ul">
+                </ul>
+        </div>
+    </div>
+
+    <script>
+        const audio = document.getElementById('my-audio');
+        const playBtn = document.getElementById('play-btn');
+        const loopBtn = document.getElementById('loop-btn');
+        const musicTitle = document.getElementById('music-title');
+        const fileInput = document.getElementById('file-input');
+        const playlistUl = document.getElementById('playlist-ul');
+        const albumArt = document.getElementById('album-art');
+
+        let playlist = [];  // 곡 정보를 담을 리스트
+        let currentIdx = 0; // 현재 곡 위치
+
+        let isLooping5Sec = false; // 구간반복 활성화 여부
+        let loopStartTime = 0;     // 구간반복이 시작된 시점의 재생시간 저장
+
+        // 1. 사용자가 파일을 선택했을 때 처리하는 기능
+        fileInput.addEventListener('change', function(e) {
+            const files = e.target.files;
+            if (files.length === 0) return;
+
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                if (file.type !== 'audio/mpeg') continue; // MP3 파일만 골라내기
+
+                // 💡 [핵심] 브라우저가 임시로 파일에 접근할 수 있는 가상 주소(Blob URL) 생성
+                const fileUrl = URL.createObjectURL(file);
+                
+                playlist.push({
+                    title: file.name.replace('.mp3', ''), // 확장자 지우고 제목 추출
+                    src: fileUrl
+                });
+            }
+
+            renderPlaylist(); // 화면 목록 새로고침
+
+            // 처음 곡이 등록되었고, 아직 아무 노래도 로드되지 않았다면 첫 곡을 대기시킴
+            if (playlist.length > 0 && audio.src === "") {
+                currentIdx = 0;
+                loadTrack(currentIdx);
+            }
+        });
+
+        // 2. 플레이리스트 목록을 화면에 깔끔하게 그려주는 기능
+        function renderPlaylist() {
+            playlistUl.innerHTML = ''; // 기존 리스트 청소
+
+            playlist.forEach((track, index) => {
+                const li = document.createElement('li');
+                li.innerText = `${index + 1}. ${track.title}`;
+                
+                // 현재 재생중인 곡이면 특별한 CSS 클래스 부여
+                if (index === currentIdx && audio.src !== "") {
+                    li.classList.add('playing');
+                }
+
+                // 리스트 안의 노래를 클릭하면 바로 재생되는 기능
+                li.addEventListener('click', () => {
+                    currentIdx = index;
+                    loadTrack(currentIdx);
+                    audio.play();
+                    setPlayState(true);
+                });
+
+                playlistUl.appendChild(li);
+            });
+        }
+
+        // 3. 곡을 재생 장치에 불러오는 기능
+        function loadTrack(index) {
+            if (playlist.length === 0) return;
+
+            audio.src = playlist[index].src;
+            musicTitle.innerText = playlist[index].title;
+            
+            // 새 곡이 로드되면 기존에 켜져 있던 구간 반복은 해제함
+            if (isLooping5Sec) {
+                isLooping5Sec = false;
+                loopBtn.innerText = "5초 구간 반복: OFF";
+                loopBtn.classList.remove('active');
+            }
+
+            renderPlaylist(); // 재생 표시를 업데이트하기 위해 리스트 리렌더링
+        }
+
+        // 4. 재생 상태에 따라 그래픽과 버튼 모양을 바꾸는 통합 조절 기능
+        function setPlayState(isPlaying) {
+            if (isPlaying) {
+                playBtn.innerText = "⏸";
+                albumArt.style.animationPlayState = "running"; // 앨범 아트 회전 시작
+            } else {
+                playBtn.innerText = "▶";
+                albumArt.style.animationPlayState = "paused";  // 앨범 아트 회전 일시정지
+            }
+        }
+
+        // 5. 기본 컨트롤 함수들
+        function togglePlay() {
+            if (playlist.length === 0) {
+                alert("음악 파일이 없습니다. 상단 버튼을 통해 MP3 파일을 먼저 추가해 주세요!");
+                return;
+            }
+
+            if (audio.paused) {
+                audio.play();
+                setPlayState(true);
+            } else {
+                audio.pause();
+                setPlayState(false);
+            }
+        }
+
+        function stopTrack() {
+            audio.pause();
+            audio.currentTime = 0; // 시간을 처음으로 되돌림
+            setPlayState(false);
+            if (isLooping5Sec) toggleLoop5Sec(); // 정지 시 구간반복도 OFF
+        }
+
+        function nextTrack() {
+            if (playlist.length === 0) return;
+            currentIdx = (currentIdx + 1) % playlist.length; // 마지막 곡이면 다시 0번으로
+            loadTrack(currentIdx);
+            audio.play();
+            setPlayState(true);
+        }
+
+        function prevTrack() {
+            if (playlist.length === 0) return;
+            currentIdx = (currentIdx - 1 + playlist.length) % playlist.length; // 0번 곡이면 마지막 곡으로
+            loadTrack(currentIdx);
+            audio.play();
+            setPlayState(true);
+        }
+
+        // 6. ⭐ 핵심: 5초 구간 반복 기능
+        function toggleLoop5Sec() {
+            if (playlist.length === 0) return;
+            if (audio.paused) {
+                alert("노래가 재생 중일 때만 구간 반복을 지정할 수 있습니다.");
+                return;
+            }
+
+            if (!isLooping5Sec) {
+                isLooping5Sec = true;
+                loopStartTime = audio.currentTime; // 누른 시점의 재생 위치(초) 기록
+                loopBtn.innerText = "5초 구간 반복: ON";
+                loopBtn.classList.add('active');
+            } else {
+                isLooping5Sec = false;
+                loopBtn.innerText = "5초 구간 반복: OFF";
+                loopBtn.classList.remove('active');
+            }
+        }
+
+        // 7. 실시간 감시 엔진 (노래가 흐르는 동안 브라우저가 주기적으로 실행함)
+        audio.addEventListener('timeupdate', function() {
+            if (isLooping5Sec) {
+                // 현재 재생 시간이 설정된 시작점보다 5초를 넘어가면 강제로 소환
+                if (audio.currentTime >= loopStartTime + 5) {
+                    audio.currentTime = loopStartTime;
+                }
+            }
+        });
+
+        // 8. 노래 한 곡이 완전히 끝났을 때의 자동화 기능
+        audio.addEventListener('ended', function() {
+            nextTrack(); // 자동으로 다음 곡 재생
+        });
+    </script>
+</body>
+</html>

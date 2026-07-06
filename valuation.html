@@ -1,0 +1,613 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI Stock Valuation Hub</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+      :root {
+        --bg-main: #090d1a;
+        --bg-card: #121829;
+        --bg-input: #1b233d;
+        --primary: #00f0ff;
+        --primary-hover: #00c8ff;
+        --text-main: #f3f4f6;
+        --text-muted: #8e9aa8;
+        --border: #222f4d;
+        --accent-red: #ff4a5a;
+        --accent-green: #10b981;
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+        font-family:
+          -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      }
+
+      body {
+        background-color: var(--bg-main);
+        color: var(--text-main);
+        padding: 2rem 1rem;
+      }
+
+      .wrapper {
+        max-width: 1300px;
+        margin: 0 auto;
+      }
+
+      header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+        border-bottom: 1px solid var(--border);
+        padding-bottom: 1rem;
+      }
+
+      header h1 {
+        font-size: 1.6rem;
+        font-weight: 700;
+        letter-spacing: -0.5px;
+      }
+
+      header h1 span {
+        color: var(--primary);
+      }
+
+      .status-badge {
+        font-size: 0.85rem;
+        padding: 0.4rem 0.8rem;
+        border-radius: 30px;
+        background: rgba(0, 240, 255, 0.1);
+        border: 1px solid var(--primary);
+        color: var(--primary);
+      }
+
+      .dashboard-grid {
+        display: grid;
+        grid-template-columns: repeat(12, 1fr);
+        gap: 1.5rem;
+      }
+
+      .card {
+        background-color: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 1.5rem;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+      }
+
+      .col-12 {
+        grid-column: span 12;
+      }
+      .col-6 {
+        grid-column: span 6;
+      }
+
+      @media (max-width: 900px) {
+        .col-6 {
+          grid-column: span 12;
+        }
+      }
+
+      h2 {
+        font-size: 1.15rem;
+        margin-bottom: 1.2rem;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      h2::before {
+        content: "";
+        width: 4px;
+        height: 15px;
+        background-color: var(--primary);
+        border-radius: 2px;
+      }
+
+      .search-box {
+        display: flex;
+        gap: 0.75rem;
+      }
+
+      input {
+        flex: 1;
+        background-color: var(--bg-input);
+        border: 1px solid var(--border);
+        padding: 0.8rem 1rem;
+        border-radius: 8px;
+        color: #fff;
+        font-size: 1rem;
+        outline: none;
+        transition: border-color 0.2s;
+      }
+
+      input:focus {
+        border-color: var(--primary);
+      }
+
+      button {
+        background-color: var(--primary);
+        color: var(--bg-main);
+        border: none;
+        padding: 0.8rem 1.5rem;
+        border-radius: 8px;
+        font-weight: 700;
+        font-size: 1rem;
+        cursor: pointer;
+        transition: opacity 0.2s;
+      }
+
+      button:hover {
+        opacity: 0.9;
+      }
+
+      .btn-outline {
+        background: transparent;
+        border: 1px solid var(--border);
+        color: var(--text-main);
+      }
+
+      .btn-outline:hover {
+        background: var(--bg-input);
+        border-color: var(--primary);
+      }
+
+      .grid-inputs {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: 1rem;
+        margin-bottom: 1rem;
+      }
+
+      .input-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.4rem;
+      }
+
+      .input-group label {
+        font-size: 0.8rem;
+        color: var(--text-muted);
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 1rem;
+      }
+
+      th,
+      td {
+        padding: 0.75rem 0.5rem;
+        text-align: left;
+        border-bottom: 1px solid var(--border);
+        font-size: 0.9rem;
+      }
+
+      th {
+        color: var(--text-muted);
+        font-weight: 500;
+      }
+
+      .chart-container {
+        height: 280px;
+        position: relative;
+      }
+
+      .result-panel {
+        background: rgba(255, 255, 255, 0.02);
+        border-left: 3px solid var(--primary);
+        padding: 1rem;
+        border-radius: 0 8px 8px 0;
+        margin-top: 1rem;
+      }
+
+      .result-line {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 0.5rem;
+        font-size: 0.95rem;
+      }
+
+      .result-line:last-child {
+        margin-bottom: 0;
+      }
+
+      .highlight-text {
+        color: var(--primary);
+        font-weight: 700;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrapper">
+      <header>
+        <h1>Valuation <span>Suite</span></h1>
+        <div class="status-badge" id="backendStatus">LocalStorage 활성화됨</div>
+      </header>
+
+      <div class="dashboard-grid">
+        <!-- 1. 컨트롤러 유닛 -->
+        <div class="card col-12">
+          <h2>주식 데이터 수집 및 로컬 제어</h2>
+          <div class="search-box">
+            <input
+              type="text"
+              id="tickerInput"
+              placeholder="종목코드 6자리 또는 미국 티커 입력 (예: 005930, AAPL)"
+              value="005930"
+            />
+            <button onclick="fetchDataFromBackend()">Python API 호출</button>
+            <button class="btn-outline" onclick="saveToLocalStorage()">
+              로컬 저장(수동)
+            </button>
+          </div>
+          <p
+            style="
+              font-size: 0.8rem;
+              color: var(--text-muted);
+              margin-top: 0.5rem;
+            "
+          >
+            * 로컬 백엔드가 실행 중이지 않으면 에러가 발생할 수 있습니다. 수동
+            입력 후 로컬 저장하여 오프라인 대시보드로도 활용 가능합니다.
+          </p>
+        </div>
+
+        <!-- 2. 피보나치 입력 및 테이블 -->
+        <div class="card col-6">
+          <h2>피보나치 조정대</h2>
+          <div class="grid-inputs">
+            <div class="input-group">
+              <label>최고가 (High)</label>
+              <input
+                type="number"
+                id="fiboHigh"
+                value="80000"
+                onchange="recalculateAll()"
+              />
+            </div>
+            <div class="input-group">
+              <label>최저가 (Low)</label>
+              <input
+                type="number"
+                id="fiboLow"
+                value="50000"
+                onchange="recalculateAll()"
+              />
+            </div>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>비율</th>
+                <th>목표 가격</th>
+              </tr>
+            </thead>
+            <tbody id="fiboTable"></tbody>
+          </table>
+        </div>
+
+        <!-- 3. 피보나치 차트 -->
+        <div class="card col-6">
+          <h2>조정대 시각화 차트</h2>
+          <div class="chart-container">
+            <canvas id="fiboChart"></canvas>
+          </div>
+        </div>
+
+        <!-- 4. 피터 린치 가치평가 -->
+        <div class="card col-6">
+          <h2>피터 린치 매트릭스</h2>
+          <div class="grid-inputs">
+            <div class="input-group">
+              <label>EPS (주당순이익)</label>
+              <input
+                type="number"
+                id="eps"
+                value="5000"
+                onchange="recalculateAll()"
+              />
+            </div>
+            <div class="input-group">
+              <label>BPS (주당순자산)</label>
+              <input
+                type="number"
+                id="bps"
+                value="45000"
+                onchange="recalculateAll()"
+              />
+            </div>
+            <div class="input-group">
+              <label>기대성장률 (%)</label>
+              <input
+                type="number"
+                id="growthRate"
+                value="12"
+                onchange="recalculateAll()"
+              />
+            </div>
+            <div class="input-group">
+              <label>현재 주가</label>
+              <input
+                type="number"
+                id="currentPrice"
+                value="65000"
+                onchange="recalculateAll()"
+              />
+            </div>
+          </div>
+          <div class="result-panel" id="lynchResult"></div>
+        </div>
+
+        <!-- 5. DCF 가치평가 -->
+        <div class="card col-6">
+          <h2>DCF (현금흐름할인법)</h2>
+          <div class="grid-inputs">
+            <div class="input-group">
+              <label>FCF (초기현금흐름)</label>
+              <input
+                type="number"
+                id="fcf"
+                value="5000"
+                onchange="recalculateAll()"
+              />
+            </div>
+            <div class="input-group">
+              <label>초기성장률(%)</label>
+              <input
+                type="number"
+                id="dcfGrowth"
+                value="10"
+                onchange="recalculateAll()"
+              />
+            </div>
+            <div class="input-group">
+              <label>할인율(WACC, %)</label>
+              <input
+                type="number"
+                id="discountRate"
+                value="8"
+                onchange="recalculateAll()"
+              />
+            </div>
+            <div class="input-group">
+              <label>영구성장률(%)</label>
+              <input
+                type="number"
+                id="terminalGrowth"
+                value="2"
+                onchange="recalculateAll()"
+              />
+            </div>
+            <div class="input-group">
+              <label>발행주식수(만주)</label>
+              <input
+                type="number"
+                id="sharesOut"
+                value="10000"
+                onchange="recalculateAll()"
+              />
+            </div>
+          </div>
+          <div class="result-panel" id="dcfResult"></div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      let chartInstance = null;
+      const BACKEND_URL = "http://localhost:8000";
+
+      window.onload = function () {
+        loadFromLocalStorage();
+        recalculateAll();
+      };
+
+      // Python FastAPI 백엔드 연동 데이터 수집
+      async function fetchDataFromBackend() {
+        const ticker = document.getElementById("tickerInput").value.trim();
+        if (!ticker) return alert("티커를 입력하세요.");
+
+        try {
+          document.getElementById("backendStatus").innerText =
+            "데이터 요청 중...";
+          const response = await fetch(
+            `${BACKEND_URL}/api/valuation/${ticker}`,
+          );
+          if (!response.ok) throw new Error("서버 응답 오류");
+
+          const data = await response.json();
+
+          // 입력 폼에 바인딩
+          document.getElementById("fiboHigh").value = data.fiboHigh;
+          document.getElementById("fiboLow").value = data.fiboLow;
+          document.getElementById("eps").value = data.eps;
+          document.getElementById("bps").value = data.bps;
+          document.getElementById("currentPrice").value = data.currentPrice;
+          document.getElementById("fcf").value = data.fcf;
+          document.getElementById("growthRate").value = data.growthRate;
+
+          document.getElementById("backendStatus").innerText =
+            "연동 및 동기화 완료";
+
+          // 가져온 즉시 계산 및 자동 로컬 저장
+          recalculateAll();
+          saveToLocalStorage();
+        } catch (error) {
+          console.error(error);
+          document.getElementById("backendStatus").innerText =
+            "백엔드 연결 실패 (로컬모드)";
+          alert(
+            "로컬 Python 백엔드(Port 8000)를 찾을 수 없습니다. 브라우저 단독 모드로 작동하며 기존 수동 데이터를 사용합니다.",
+          );
+        }
+      }
+
+      // 로컬 스토리지 제어 기능
+      function saveToLocalStorage() {
+        const payload = {
+          ticker: document.getElementById("tickerInput").value,
+          fiboHigh: document.getElementById("fiboHigh").value,
+          fiboLow: document.getElementById("fiboLow").value,
+          eps: document.getElementById("eps").value,
+          bps: document.getElementById("bps").value,
+          growthRate: document.getElementById("growthRate").value,
+          currentPrice: document.getElementById("currentPrice").value,
+          fcf: document.getElementById("fcf").value,
+          dcfGrowth: document.getElementById("dcfGrowth").value,
+          discountRate: document.getElementById("discountRate").value,
+          terminalGrowth: document.getElementById("terminalGrowth").value,
+          sharesOut: document.getElementById("sharesOut").value,
+        };
+        localStorage.setItem("git_valuation_store", JSON.stringify(payload));
+        console.log("LocalStorage Saved.");
+      }
+
+      function loadFromLocalStorage() {
+        const raw = localStorage.getItem("git_valuation_store");
+        if (!raw) return;
+        const data = JSON.parse(raw);
+
+        document.getElementById("tickerInput").value = data.ticker || "005930";
+        document.getElementById("fiboHigh").value = data.fiboHigh || 80000;
+        document.getElementById("fiboLow").value = data.fiboLow || 50000;
+        document.getElementById("eps").value = data.eps || 5000;
+        document.getElementById("bps").value = data.bps || 45000;
+        document.getElementById("growthRate").value = data.growthRate || 12;
+        document.getElementById("currentPrice").value =
+          data.currentPrice || 65000;
+        document.getElementById("fcf").value = data.fcf || 5000;
+        document.getElementById("dcfGrowth").value = data.dcfGrowth || 10;
+        document.getElementById("discountRate").value = data.discountRate || 8;
+        document.getElementById("terminalGrowth").value =
+          data.terminalGrowth || 2;
+        document.getElementById("sharesOut").value = data.sharesOut || 10000;
+      }
+
+      function recalculateAll() {
+        calculateFibonacci();
+        calculatePeterLynch();
+        calculateDCF();
+        // 입력 변경 시 실시간 반영을 위한 자동 백업
+        saveToLocalStorage();
+      }
+
+      function calculateFibonacci() {
+        const high = parseFloat(document.getElementById("fiboHigh").value) || 0;
+        const low = parseFloat(document.getElementById("fiboLow").value) || 0;
+        const diff = high - low;
+        const ratios = [0, 0.236, 0.382, 0.5, 0.618, 0.786, 1];
+
+        const tbody = document.getElementById("fiboTable");
+        tbody.innerHTML = "";
+
+        const labels = [];
+        const chartData = [];
+
+        ratios.forEach((r) => {
+          const val = high - diff * r;
+          const pct = (r * 100).toFixed(1) + "%";
+
+          tbody.innerHTML += `<tr><td>${pct}</td><td>${Math.round(val).toLocaleString()} 원</td></tr>`;
+          labels.push(pct);
+          chartData.push(Math.round(val));
+        });
+
+        if (chartInstance) chartInstance.destroy();
+        const ctx = document.getElementById("fiboChart").getContext("2d");
+        chartInstance = new Chart(ctx, {
+          type: "line",
+          data: {
+            labels: labels,
+            datasets: [
+              {
+                data: chartData,
+                borderColor: "#00F0FF",
+                backgroundColor: "rgba(0, 240, 255, 0.05)",
+                fill: true,
+                borderWidth: 2,
+                pointBackgroundColor: "#FF4A5A",
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+              x: { grid: { color: "#222F4D" }, ticks: { color: "#8E9AA8" } },
+              y: { grid: { color: "#222F4D" }, ticks: { color: "#8E9AA8" } },
+            },
+          },
+        });
+      }
+
+      function calculatePeterLynch() {
+        const eps = parseFloat(document.getElementById("eps").value) || 0;
+        const bps = parseFloat(document.getElementById("bps").value) || 0;
+        const g = parseFloat(document.getElementById("growthRate").value) || 0;
+        const cur =
+          parseFloat(document.getElementById("currentPrice").value) || 1;
+
+        const fairPrice = eps * g;
+        const peg = cur / eps / g;
+        let status = "적정가";
+        let color = "var(--text-main)";
+
+        if (peg < 1) {
+          status = "강한 저평가";
+          color = "var(--accent-green)";
+        } else if (peg > 1.5) {
+          status = "고평가 유의";
+          color = "var(--accent-red)";
+        }
+
+        document.getElementById("lynchResult").innerHTML = `
+            <div class="result-line"><span>성장률 기반 적정주가:</span><span class="highlight-text">${Math.round(fairPrice).toLocaleString()} 원</span></div>
+            <div class="result-line"><span>청산가치 (BPS):</span><span>${Math.round(bps).toLocaleString()} 원</span></div>
+            <div class="result-line"><span>현재 PEG 지수:</span><span style="color:${color}; font-weight:bold;">${peg.toFixed(2)} (${status})</span></div>
+        `;
+      }
+
+      function calculateDCF() {
+        const fcf = parseFloat(document.getElementById("fcf").value) || 0;
+        const g =
+          (parseFloat(document.getElementById("dcfGrowth").value) || 0) / 100;
+        const r =
+          (parseFloat(document.getElementById("discountRate").value) || 0) /
+          100;
+        const dg =
+          (parseFloat(document.getElementById("terminalGrowth").value) || 0) /
+          100;
+        const shares =
+          (parseFloat(document.getElementById("sharesOut").value) || 1) * 10000;
+
+        let pvSum = 0;
+        let currentFCF = fcf;
+
+        for (let i = 1; i <= 5; i++) {
+          currentFCF *= 1 + g;
+          pvSum += currentFCF / Math.pow(1 + r, i);
+        }
+
+        const terminalVal = (currentFCF * (1 + dg)) / (r - dg);
+        const pvTerminal = terminalVal / Math.pow(1 + r, 5);
+        const enterpriseVal = (pvSum + pvTerminal) * 100000000;
+        const fairValue = enterpriseVal / shares;
+
+        document.getElementById("dcfResult").innerHTML = `
+            <div class="result-line"><span>5개년 FCF 현가합:</span><span>${Math.round(pvSum).toLocaleString()} 억 원</span></div>
+            <div class="result-line"><span>영구가치 현가합:</span><span>${Math.round(pvTerminal).toLocaleString()} 억 원</span></div>
+            <div class="result-line" style="margin-top:0.5rem;"><span>DCF 최종 적정주가:</span><span class="highlight-text" style="font-size:1.1rem;">${Math.round(fairValue).toLocaleString()} 원</span></div>
+        `;
+      }
+    </script>
+  </body>
+</html>
