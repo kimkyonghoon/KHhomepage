@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>투자자용 매크로 지표 대시보드 (Macro Insights)</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        :root {
+            --bg-main: #090d16;
+            --bg-card: #121826;
+            --bg-inner: #1a2235;
+            --primary-blue: #0052ff;
+            --cyan-blue: #00d2ff;
+            --text-title: #ffffff;
+            --text-body: #d1d5db;
+            --text-muted: #6b7280;
+            --border-color: #263147;
+            --accent-green: #10b981;
+            --accent-red: #ef4444;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: var(--bg-main);
+            color: var(--text-body);
+            padding: 30px;
+            line-height: 1.6;
+        }
+
+        header {
+            border-bottom: 2px solid var(--primary-blue);
+            padding-bottom: 20px;
+            margin-bottom: 35px;
+        }
+
+        .header-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+        }
+
+        .logo-area h1 {
+            color: var(--text-title);
+            font-size: 28px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+        }
+
+        .logo-area h1 span { color: var(--cyan-blue); }
+        .logo-area p { color: var(--text-muted); font-size: 14px; margin-top: 5px; }
+
+        .status-badge {
+            background-color: rgba(0, 82, 255, 0.15);
+            border: 1px solid var(--primary-blue);
+            color: var(--cyan-blue);
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 25px;
+            margin-bottom: 35px;
+        }
+
+        .metric-card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .ticker-name {
+            font-size: 13px;
+            font-weight: bold;
+            color: var(--cyan-blue);
+            background: rgba(0, 210, 255, 0.1);
+            padding: 2px 8px;
+            border-radius: 4px;
+            display: inline-block;
+        }
+
+        .index-title {
+            font-size: 18px;
+            color: var(--text-title);
+            font-weight: 700;
+            margin-top: 8px;
+        }
+
+        .card-value-box { margin: 15px 0; }
+        .current-price { font-size: 32px; font-weight: 800; color: var(--text-title); }
+        .price-change { font-size: 14px; font-weight: 600; margin-top: 4px; }
+
+        /* 상승/하락 컬러 클래스 */
+        .up { color: var(--accent-green); }
+        .down { color: var(--accent-red); }
+
+        .indicator-meaning {
+            background-color: var(--bg-inner);
+            border-left: 3px solid var(--primary-blue);
+            padding: 12px 15px;
+            border-radius: 0 8px 8px 0;
+            margin-top: 15px;
+        }
+
+        .indicator-meaning strong { color: var(--text-title); display: block; margin-bottom: 4px; font-size: 13px;}
+        .indicator-meaning p { color: var(--text-body); font-size: 12.5px; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="header-container">
+            <div class="logo-area">
+                <h1>MACRO<span>INSIGHTS</span></h1>
+                <p>투자자를 위한 야후 파이낸스 API 기반 주요 핵심 지표 및 시장 해설 홈</p>
+            </div>
+            <div class="status-badge" id="api-status">API 연결 대기 중...</div>
+        </div>
+    </header>
+
+    <div class="dashboard-grid">
+        <div class="metric-card" id="card-sp500">
+            <div>
+                <div><span class="ticker-name">^GSPC</span></div>
+                <div class="index-title">S&P 500 지수</div>
+                <div class="card-value-box">
+                    <div class="current-price">Loading...</div>
+                    <div class="price-change">0.00 (0.00%)</div>
+                </div>
+            </div>
+            <div class="indicator-meaning">
+                <strong>💡 투자 지표의 의미:</strong>
+                <p>미국 주식시장을 대표하는 대형주 500개 기업의 지수입니다. 글로벌 자산 배분 및 주식 시장의 전반적인 대세 흐름을 진단하는 가장 기본 지표입니다.</p>
+            </div>
+        </div>
+
+        <div class="metric-card" id="card-nasdaq">
+            <div>
+                <div><span class="ticker-name">^IXIC</span></div>
+                <div class="index-title">나스닥 종합 지수 (Nasdaq)</div>
+                <div class="card-value-box">
+                    <div class="current-price">Loading...</div>
+                    <div class="price-change">0.00 (0.00%)</div>
+                </div>
+            </div>
+            <div class="indicator-meaning">
+                <strong>💡 투자 지표의 의미:</strong>
+                <p>기술주, IT 기업들이 대거 포진한 지수입니다. 시장 내 '위험자산 선호 심리(Risk-on)' 및 성장주에 대한 유동성 집중도를 파악할 수 있습니다.</p>
+            </div>
+        </div>
+
+        <div class="metric-card" id="card-vix">
+            <div>
+                <div><span class="ticker-name">^VIX</span></div>
+                <div class="index-title">CBOE 변동성 지수 (VIX)</div>
+                <div class="card-value-box">
+                    <div class="current-price">Loading...</div>
+                    <div class="price-change">0.00 (0.00%)</div>
+                </div>
+            </div>
+            <div class="indicator-meaning">
+                <strong>💡 투자 지표의 의미:</strong>
+                <p>일명 '공포 지수'입니다. 보통 20 미만이면 시장 안정기, 30을 넘어가면 시장이 극심한 패닉 상태에 빠졌음을 의미하여 역발상 매수 타이밍을 잡을 때 유용합니다.</p>
+            </div>
+        </div>
+
+        <div class="metric-card" id="card-bond10y">
+            <div>
+                <div><span class="ticker-name">^TNX</span></div>
+                <div class="index-title">미국 국채 10년물 금리</div>
+                <div class="card-value-box">
+                    <div class="current-price">Loading...</div>
+                    <div class="price-change">0.00 (0.00%)</div>
+                </div>
+            </div>
+            <div class="indicator-meaning">
+                <strong>💡 투자 지표의 의미:</strong>
+                <p>글로벌 장기 자금 조달 금리의 기준입니다. 금리가 급등하면 기술주 등 성장주의 할인율이 높아져 주가에 부담을 주며, 인플레이션 기대 심리를 투영합니다.</p>
+            </div>
+        </div>
+
+        <div class="metric-card" id="card-dollar">
+            <div>
+                <div><span class="ticker-name">DX-Y.NYB</span></div>
+                <div class="index-title">달러 인덱스 (Dollar Index)</div>
+                <div class="card-value-box">
+                    <div class="current-price">Loading...</div>
+                    <div class="price-change">0.00 (0.00%)</div>
+                </div>
+            </div>
+            <div class="indicator-meaning">
+                <strong>💡 투자 지표의 의미:</strong>
+                <p>주요국 통화 대비 미국 달러화의 가치입니다. 달러가 강세를 보이면 안전자산 선호가 강하다는 뜻이며, 신흥국 증시에서 외국인 자금이 이탈하는 경향이 생깁니다.</p>
+            </div>
+        </div>
+
+        <div class="metric-card" id="card-oil">
+            <div>
+                <div><span class="ticker-name">CL=F</span></div>
+                <div class="index-title">WTI 원유 선물 (Crude Oil)</div>
+                <div class="card-value-box">
+                    <div class="current-price">Loading...</div>
+                    <div class="price-change">0.00 (0.00%)</div>
+                </div>
+            </div>
+            <div class="indicator-meaning">
+                <strong>💡 투자 지표의 의미:</strong>
+                <p>국제 원자재 및 에너지 가격의 핵심입니다. 유가 상승은 기업 비용을 높여 인플레이션 압력을 가중시키고 중앙은행의 금리 인하를 지연시키는 리스크 요인입니다.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Python 백엔드 API 서버로부터 데이터를 가져와 UI를 업데이트하는 핵심 로직
+        async function fetchMacroData() {
+            const statusBadge = document.getElementById('api-status');
+            try {
+                // 1단계에서 만든 FastAPI 서버 주소 호출 (CORS 우회)
+                const response = await fetch('http://localhost:8000/api/macro');
+                if (!response.ok) throw new Error("네트워크 응답 불량");
+                
+                const data = await response.json();
+                
+                // 데이터 매핑 리스트
+                const keys = ['sp500', 'nasdaq', 'vix', 'bond10y', 'dollar', 'oil'];
+                
+                keys.forEach(key => {
+                    const card = document.getElementById(`card-${key}`);
+                    if(card && data[key]) {
+                        // 가격 및 변동률 업데이트
+                        card.querySelector('.current-price').innerText = data[key].price;
+                        
+                        const changeEl = card.querySelector('.price-change');
+                        changeEl.innerText = data[key].change;
+                        
+                        // 상승/하락 여부에 따른 스타일 클래스(up/down) 부여
+                        changeEl.className = `price-change ${data[key].status}`;
+                    }
+                });
+                
+                statusBadge.innerText = "Yahoo API 데이터 연동 완료";
+                statusBadge.style.borderColor = "#10b981";
+                statusBadge.style.color = "#10b981";
+                statusBadge.style.backgroundColor = "rgba(16, 185, 129, 0.1)";
+
+            } catch (error) {
+                console.error("데이터 로드 실패:", error);
+                statusBadge.innerText = "API 오프라인 (백엔드 확인 필요)";
+                statusBadge.style.borderColor = "#ef4444";
+                statusBadge.style.color = "#ef4444";
+                statusBadge.style.backgroundColor = "rgba(239, 68, 68, 0.1)";
+            }
+        }
+
+        // 페이지가 열릴 때 '딱 한 번만' 야후 파이낸스 가공 데이터를 조회하여 뿌려줌
+        window.onload = fetchMacroData;
+    </script>
+</body>
+</html>
